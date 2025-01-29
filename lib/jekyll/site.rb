@@ -49,7 +49,7 @@ module Jekyll
 
       %w(safe lsi highlighter baseurl exclude include future unpublished
          show_drafts limit_posts keep_files).each do |opt|
-        send("#{opt}=", config[opt])
+        send(:"#{opt}=", config[opt])
       end
 
       # keep using `gems` to avoid breaking change
@@ -360,11 +360,9 @@ module Jekyll
     end
 
     def each_site_file
-      %w(pages static_files_to_write docs_to_write).each do |type|
-        send(type).each do |item|
-          yield item
-        end
-      end
+      pages.each { |page| yield page }
+      static_files.each { |file| yield(file) if file.write? }
+      collections.each_value { |coll| coll.docs.each { |doc| yield(doc) if doc.write? } }
     end
 
     # Returns the FrontmatterDefaults or creates a new FrontmatterDefaults
@@ -488,7 +486,7 @@ module Jekyll
     # Returns nothing
     def limit_posts!
       if limit_posts.positive?
-        limit = posts.docs.length < limit_posts ? posts.docs.length : limit_posts
+        limit = [posts.docs.length, limit_posts].min
         posts.docs = posts.docs[-limit, limit]
       end
     end
